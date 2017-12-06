@@ -84,7 +84,7 @@ begin
  -- Output
 
  iob_o <=  port_value_i xor out_xor_i;
- iob_t <=  output_en_i;
+ iob_t <=  not output_en_i;
 
 
   rising_o <= rising;

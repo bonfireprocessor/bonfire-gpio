@@ -45,7 +45,13 @@ PORT (
     wb_cyc_i: in std_logic;
     wb_stb_i: in std_logic;
     wb_ack_o: out std_logic;
-    wb_inta_o:out std_logic;
+
+    -- irq outs
+    rise_irq_o : out std_logic;
+    fall_irq_o : out std_logic;
+    high_irq_o : out std_logic;
+    low_irq_o : out std_logic;
+
 
     -- GPIO
     gpio_o : out std_logic_vector(NUM_GPIO_BITS-1 downto 0);
@@ -78,6 +84,18 @@ begin
 end;
 
 
+function request_interrupt(pending: t_gpio_bits;enabled : t_gpio_bits) return std_logic is
+variable r: std_logic;
+begin
+   r:='0';
+   for i in pending'range loop
+     r := r or (pending(i) and enabled(i));
+   end loop;
+   return r;
+
+end;
+
+
 -- Registers
 signal  input_en : t_gpio_bits:= (others=>'0');
 signal  output_en : t_gpio_bits:= (others=>'0');
@@ -97,9 +115,6 @@ signal  out_xor : t_gpio_bits:= (others=>'0');
 signal pin_values : t_gpio_bits;
 signal rise_ip_i : t_gpio_bits;
 signal fall_ip_i : t_gpio_bits;
-signal high_ip_i : t_gpio_bits;
-signal low_ip_i : t_gpio_bits;
-
 
 COMPONENT gpio_bit
     PORT(
@@ -154,7 +169,10 @@ end generate;
 
    -- Read process
 
-   process(wb_cyc_i,wb_stb_i,wb_we_i,wb_adr_i)
+   process(wb_cyc_i,wb_stb_i,wb_we_i,wb_adr_i,
+           pin_values,input_en,output_en,port_reg,
+           rise_ie,rise_ip,fall_ie,fall_ip,high_ie,
+           high_ip,low_ie,low_ip,out_xor )
    variable regnum : t_regnum;
 
    begin
@@ -190,36 +208,35 @@ end generate;
    process(wb_clk_i)
    variable regnum : t_regnum;
 
-   procedure clear_pending(signal ip_reg: out t_gpio_bits;
-                            dat : std_logic_vector(wb_dat_i'range)) is
-   begin
-     for i in ip_reg'range loop
-       if dat(i)='1' then
-         ip_reg(i) <= '0';
-       end if;
-     end loop;
-   end;
+       procedure clear_pending(signal ip_reg: out t_gpio_bits;
+                                dat : std_logic_vector(wb_dat_i'range)) is
+       begin
+         for i in ip_reg'range loop
+           if dat(i)='1' then
+             ip_reg(i) <= '0';
+           end if;
+         end loop;
+       end;
 
-   procedure set_pending(signal ip_reg : out t_gpio_bits;
-                         port_ip:t_gpio_bits;
-                         port_ie:t_gpio_bits) is
+       procedure set_pending(signal ip_reg : out t_gpio_bits;
+                             port_ip:t_gpio_bits) is
 
-   begin
-     for i in ip_reg'range loop
-       if port_ip(i)='1'  and port_ie(i)='1' then
-         ip_reg(i) <= '1';
-       end if;
-     end loop;
-   end;
+       begin
+         for i in ip_reg'range loop
+           if port_ip(i)='1'  then
+             ip_reg(i) <= '1';
+           end if;
+         end loop;
+       end;
 
    begin
      if rising_edge(wb_clk_i) then
 
        -- Register pending bits from IO Port when enabled
-       set_pending(rise_ip,rise_ie,rise_ip_i);
-       set_pending(fall_ip,fall_ie,fall_ip_i);
-       set_pending(high_ip,high_ie,pin_values);
-       set_pending(low_ip,low_ie, not pin_values);
+       set_pending(rise_ip,rise_ip_i);
+       set_pending(fall_ip,fall_ip_i);
+       set_pending(high_ip,pin_values);
+       set_pending(low_ip, not pin_values);
 
 
        if wb_cyc_i = '1' and wb_stb_i='1' and wb_we_i='1' then
@@ -239,7 +256,7 @@ end generate;
              when tr_low_ip => clear_pending(low_ip,wb_dat_i);
              when tr_out_xor => out_xor <= wb_dat_i;
 
-             when others=> wb_dat_o <= (others=> 'X');
+             when others=>
 
 
           end case;
@@ -249,9 +266,14 @@ end generate;
 
      end if;
 
-
-
    end process;
+
+-- IRQ Lines
+
+  rise_irq_o <= request_interrupt(rise_ip,rise_ie);
+  fall_irq_o <= request_interrupt(fall_ip,fall_ie);
+  high_irq_o <= request_interrupt(high_ip,high_ie);
+  low_irq_o  <= request_interrupt(low_ip,low_ie);
 
 
 end Behavioral;
