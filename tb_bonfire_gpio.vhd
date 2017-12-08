@@ -97,11 +97,21 @@ ARCHITECTURE behavior OF tb_bonfire_gpio IS
    signal rise_irq, high_irq, fall_irq,low_irq : std_logic;
 
 
-   subtype t_adr_s is std_logic_vector(7 downto 0);
 
+
+   signal TbClock : std_logic := '0';
+   signal TbSimEnded : std_logic := '0';
    constant clk_period : time := 10 ns;
 
+
+   subtype t_adr_s is std_logic_vector(7 downto 0);
+
 BEGIN
+
+    -- Clock generation
+    TbClock <= not TbClock after clk_period/2 when TbSimEnded /= '1' else '0';
+
+    wb_clk_i <= TbClock;
 
    -- Wire pads
 
@@ -140,14 +150,6 @@ BEGIN
           gpio_t => gpio_t
         );
 
-   -- Clock process definitions
-   clk_process :process
-   begin
-        wb_clk_i <= '0';
-        wait for clk_period/2;
-        wb_clk_i <= '1';
-        wait for clk_period/2;
-   end process;
 
 
  -- Input
@@ -159,13 +161,15 @@ BEGIN
 
     -- Simulate input pattern
     for i in  pads'range loop
+       print("Input Pattern: " & str(pads));
        pads(i) <= '1';
        wait for clk_period*8.33;
        pads(i) <= '0';
     end loop;
+    print("Input Pattern: " & str(pads));
     wait for clk_period*8.33;
     pads <= (others => 'Z');
-
+    --print("Input Pattern: " & str(pads));
     wait;
 
     end process;
@@ -215,9 +219,16 @@ BEGIN
                                  r: out boolean)  is
 
         variable d : std_logic_vector(wb_dat_o'range);
+        variable s: string(1 to 64);
         begin
           wb_read(adr,d);
           r:= d=v;
+          if d=v then
+            strcpy(s," OK");
+          else
+            strcpy(s," FAIL, should be: " & hstr(v));
+          end if;
+          print("check_register(" & hstr(adr) &"): "& hstr(d) & s);
         end;
 
 
@@ -234,6 +245,7 @@ BEGIN
 
    begin
       -- hold reset state for 100 ns.
+      print("Testing Input");
       wb_write(X"04",X"FFFFFFFF"); -- Input Enable
       wb_write(X"18",X"40000000"); -- rise_ie on bit 30
 
@@ -286,6 +298,7 @@ BEGIN
       check_register(X"00",X"00000000",chk);
       assert chk report "Disabling of inputs failed" severity failure;
       print("Simulation sucessfully finished");
+      tbSimEnded<='1'; -- stop clock
       wait;
    end process;
 

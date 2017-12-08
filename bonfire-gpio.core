@@ -1,0 +1,20 @@
+CAPI=1
+[main]
+name = ::bonfire-gpio:0
+depend = ::bonfire-util:0
+
+simulators=ghdl isim
+
+[fileset rtl]
+files = bonfire_gpio.vhd gpio_bit.vhd
+file_type=vhdlSource
+
+
+[fileset sim]
+files=tb_bonfire_gpio.vhd sim_io_buffer.vhd
+file_type=vhdlSource
+scope = private
+
+
+[simulator]
+toplevel = tb_bonfire_gpio
