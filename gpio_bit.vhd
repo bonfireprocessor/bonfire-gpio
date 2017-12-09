@@ -70,7 +70,8 @@ begin
       falling <= '0';
       if edge='0' and pin_value='1' then
         rising <= '1';
-      elsif edge='1' and pin_value='0' then
+      end if;  
+      if edge='1' and pin_value='0' then
         falling <= '1';
       end if;
 

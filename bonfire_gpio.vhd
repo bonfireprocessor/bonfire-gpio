@@ -62,6 +62,9 @@ end bonfire_gpio;
 
 architecture Behavioral of bonfire_gpio is
 
+attribute keep_hierarchy : string;
+attribute keep_hierarchy of Behavioral: architecture is "TRUE";
+
 subtype t_gpio_bits is std_logic_vector(NUM_GPIO_BITS-1 downto 0);
 
 subtype t_dbus  is std_logic_vector(wb_dat_o'range);
@@ -176,7 +179,8 @@ end generate;
    variable regnum : t_regnum;
 
    begin
-
+   
+     wb_dat_o <= (others=> 'X');
      if wb_cyc_i = '1' and wb_stb_i='1' and wb_we_i='0' then
 
        regnum := get_regnum(wb_adr_i);
@@ -195,7 +199,7 @@ end generate;
          when tr_low_ip => wb_dat_o <= fill_bits(low_ip);
          when tr_out_xor => wb_dat_o <= fill_bits(out_xor);
 
-         when others=> wb_dat_o <= (others=> 'X');
+         when others=> 
 
        end case;
 

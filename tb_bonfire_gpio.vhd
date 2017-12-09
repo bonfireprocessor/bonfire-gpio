@@ -105,6 +105,8 @@ ARCHITECTURE behavior OF tb_bonfire_gpio IS
 
 
    subtype t_adr_s is std_logic_vector(7 downto 0);
+   
+   signal start_sweep : boolean := false;
 
 BEGIN
 
@@ -156,9 +158,9 @@ BEGIN
     input_proc: process
     begin
 
-    wait for clk_period*3;
+   
     pads <= (others=>'0');
-
+    wait until start_sweep;
     -- Simulate input pattern
     for i in  pads'range loop
        print("Input Pattern: " & str(pads));
@@ -247,6 +249,8 @@ BEGIN
       -- hold reset state for 100 ns.
       print("Testing Input");
       wb_write(X"04",X"FFFFFFFF"); -- Input Enable
+      wait until rising_edge(wb_clk_i);
+      start_sweep<=true;
       wb_write(X"18",X"40000000"); -- rise_ie on bit 30
 
       wait until rising_edge(wb_clk_i) and rise_irq='1';  -- Wait until Interrupt has occured
