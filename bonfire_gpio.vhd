@@ -1,21 +1,14 @@
 ----------------------------------------------------------------------------------
--- Company:
--- Engineer:
---
--- Create Date:    19:43:27 12/05/2017
--- Design Name:
+
 -- Module Name:    bonfire-gpio - Behavioral
--- Project Name:
--- Target Devices:
--- Tool versions:
--- Description:
---
--- Dependencies:
---
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
---
+
+-- The Bonfire Processor Project, (c) 2016,2017 Thomas Hornschuh
+
+--  GPIO Interface compatible with SiFive FE310-G000 GPIO
+--  See chapter 17. of the SiFive FE310-G000 Manual
+
+
+-- License: See LICENSE or LICENSE.txt File in git project root. 
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -58,12 +51,18 @@ PORT (
     gpio_i : in  std_logic_vector(NUM_GPIO_BITS-1 downto 0);
     gpio_t : out std_logic_vector(NUM_GPIO_BITS-1 downto 0)
 );
+
+attribute opt_mode: string;
+attribute opt_mode of bonfire_gpio : entity is "area";
+
 end bonfire_gpio;
 
 architecture Behavioral of bonfire_gpio is
 
 attribute keep_hierarchy : string;
 attribute keep_hierarchy of Behavioral: architecture is "TRUE";
+
+
 
 subtype t_gpio_bits is std_logic_vector(NUM_GPIO_BITS-1 downto 0);
 

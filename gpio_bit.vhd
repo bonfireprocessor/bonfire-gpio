@@ -1,20 +1,11 @@
 ----------------------------------------------------------------------------------
--- Company:
--- Engineer:
---
--- Create Date:    20:02:29 12/05/2017
--- Design Name:
 -- Module Name:    gpio_bit - Behavioral
--- Project Name:
--- Target Devices:
--- Tool versions:
--- Description:
+
+-- The Bonfire Processor Project, (c) 2016,2017 Thomas Hornschuh
+
 -- Models a single bit of the GPIO Port. See chapter 17. of the SiFive FE310-G000 Manual
--- Dependencies:
---
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
+
+-- License: See LICENSE or LICENSE.txt File in git project root. 
 --
 ----------------------------------------------------------------------------------
 library IEEE;
@@ -53,6 +44,11 @@ architecture Behavioral of gpio_bit is
 
 signal pv1, pv2, pin_value : std_logic; -- Input synchronizers
 
+-- Xilinx specific attributes
+-- Place pv1 FF in IO Block
+attribute IOB: string;
+attribute IOB of pv1: signal is "true";
+
 signal edge : std_logic; --  for Edge detector
 signal rising, falling : std_logic;
 
@@ -61,9 +57,13 @@ begin
 -- Input
  process(clk_i) begin
     if rising_edge(clk_i) then
-      pv1 <= iob_i and input_en_i;
+      pv1 <= iob_i;
       pv2 <= pv1;
-      pin_value <= pv2;
+      if input_en_i='1' then
+        pin_value <= pv2;
+      else
+        pin_value <= '0';
+      end if;        
 
       -- Edge detector
       rising <= '0';
@@ -87,9 +87,8 @@ begin
  iob_o <=  port_value_i xor out_xor_i;
  iob_t <=  not output_en_i;
 
-
-  rising_o <= rising;
-  falling_o <= falling;
+ rising_o <= rising;
+ falling_o <= falling;
 
 
 
