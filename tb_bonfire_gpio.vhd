@@ -92,6 +92,7 @@ ARCHITECTURE behavior OF tb_bonfire_gpio IS
    -- Simulated IO
 
    signal pads : std_logic_vector(31 downto 0);
+   constant z32 : std_logic_vector(31 downto 0) := (others=>'Z');
 
    -- interrupt signals
    signal rise_irq, high_irq, fall_irq,low_irq : std_logic;
@@ -157,23 +158,30 @@ BEGIN
  -- Input
     input_proc: process
     begin
-
-   
-    pads <= (others=>'0');
+    pads <= z32;
     wait until start_sweep;
+    pads <= (others=>'0');
+    wait for clk_period*8.33;
     -- Simulate input pattern
     for i in  pads'range loop
-       print("Input Pattern: " & str(pads));
        pads(i) <= '1';
        wait for clk_period*8.33;
        pads(i) <= '0';
     end loop;
-    print("Input Pattern: " & str(pads));
+    
     wait for clk_period*8.33;
-    pads <= (others => 'Z');
-    --print("Input Pattern: " & str(pads));
+    print("Sweep finished: Stop driving pads");
+    pads <= z32;
+   
     wait;
 
+    end process;
+    
+    process
+    begin
+      wait on pads;
+      print("IO Pads:" & str(pads) & "(" & hstr(pads) & ")");
+      
     end process;
 
 
@@ -246,7 +254,8 @@ BEGIN
 
 
    begin
-      -- hold reset state for 100 ns.
+      
+      wait for 50 ns;
       print("Testing Input");
       wb_write(X"04",X"FFFFFFFF"); -- Input Enable
       wait until rising_edge(wb_clk_i);
@@ -263,8 +272,9 @@ BEGIN
       wb_write(X"18",X"00000000");
 
 
-      wb_write(X"20",X"00000001"); -- Enable Fall Interrupt on port 0
+      wb_write(X"20",X"00000001"); -- Enable Fall Interrupt on bit 0
       wait until rising_edge(wb_clk_i) and fall_irq='1';  -- Wait until Interrupt has occured
+      print("Fall Interrupt on Bit 0");
 
       wb_read(X"24",dat); -- Read fall_ip
       check_register(X"24",X"FFFFFFFF",chk);
@@ -283,14 +293,18 @@ BEGIN
       clear_ip_reg(X"2C",chk); assert chk report "Failure on clear high_ip"
                                  severity failure;
       -- the result of the following statement can only be seen
-      -- in the timeing diagram for 1 clock, because the low_ip bits
+      -- in the timing diagram for 1 clock, because the low_ip bits
       -- will be triggered again immediatly from the inputs
       clear_ip_reg(X"34",chk);
+      
+     -- wait until pads = z32;
 
       -- Output Test
       wb_write(X"0C",X"55AA55BB"); -- port register - output
       wb_write(X"28",X"FFFFFFFF"); -- high_ie enable
+      print("Enable outputs");
       wb_write(X"08",X"FFFFFFFF"); -- output_en register
+     
       wait until rising_edge(wb_clk_i) and high_irq='1';
       assert pads=X"55AA55BB" report "Failure on Output Test"
         severity failure;
@@ -301,6 +315,8 @@ BEGIN
       wait for clk_period*5; -- let input synchronizers settle
       check_register(X"00",X"00000000",chk);
       assert chk report "Disabling of inputs failed" severity failure;
+      wb_write(X"08",X"00000000"); -- disable all outputs
+      wait on pads;
       print("Simulation sucessfully finished");
       tbSimEnded<='1'; -- stop clock
       wait;

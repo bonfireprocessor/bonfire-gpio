@@ -66,7 +66,7 @@ attribute keep_hierarchy of Behavioral: architecture is "TRUE";
 
 subtype t_gpio_bits is std_logic_vector(NUM_GPIO_BITS-1 downto 0);
 
-subtype t_dbus  is std_logic_vector(wb_dat_o'range);
+subtype t_dbus  is std_logic_vector(wb_dat_o'high downto wb_dat_o'low);
 
 
 -- Register addresses

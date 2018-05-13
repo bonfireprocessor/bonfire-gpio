@@ -49,7 +49,7 @@ signal pv1, pv2, pin_value : std_logic; -- Input synchronizers
 attribute IOB: string;
 attribute IOB of pv1: signal is "true";
 
-signal edge : std_logic; --  for Edge detector
+--signal edge : std_logic; --  for Edge detector
 signal rising, falling : std_logic;
 
 begin
@@ -58,24 +58,24 @@ begin
  process(clk_i) begin
     if rising_edge(clk_i) then
       pv1 <= iob_i;
-      pv2 <= pv1;
+      --pv2 <= pv1;
       if input_en_i='1' then
-        pin_value <= pv2;
+        pv2 <= pv1;
       else
-        pin_value <= '0';
-      end if;        
-
+        pv2 <= '0';
+      end if;
+              
+      pin_value <= pv2;
+      
       -- Edge detector
       rising <= '0';
       falling <= '0';
-      if edge='0' and pin_value='1' then
+      if pv2='1' and pin_value='0' then
         rising <= '1';
       end if;  
-      if edge='1' and pin_value='0' then
+      if pv2='0' and pin_value='1' then
         falling <= '1';
       end if;
-
-      edge <= pin_value;
     end if;
 
  end process;
@@ -89,14 +89,6 @@ begin
 
  rising_o <= rising;
  falling_o <= falling;
-
-
-
-
-
-
-
-
 
 end Behavioral;
 
