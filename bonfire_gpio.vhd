@@ -8,7 +8,7 @@
 --  See chapter 17. of the SiFive FE310-G000 Manual
 
 
--- License: See LICENSE or LICENSE.txt File in git project root. 
+-- License: See LICENSE or LICENSE.txt File in git project root.
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -62,6 +62,28 @@ architecture Behavioral of bonfire_gpio is
 attribute keep_hierarchy : string;
 attribute keep_hierarchy of Behavioral: architecture is "TRUE";
 
+-- Attribute Infos for Xilinx Vivado IP Integrator Block designs
+-- Should not have negative influence on other platforms.
+
+ATTRIBUTE X_INTERFACE_INFO : STRING;
+ATTRIBUTE X_INTERFACE_INFO of  wb_clk_i : SIGNAL is "xilinx.com:signal:clock:1.0 wb_clk_i CLK";
+--X_INTERFACE_INFO of  wb_rst_i : SIGNAL is "xilinx.com:signal:reset:1.0 wb_rst_i RESET";
+
+ATTRIBUTE X_INTERFACE_PARAMETER : STRING;
+ATTRIBUTE X_INTERFACE_PARAMETER of wb_clk_i : SIGNAL is "ASSOCIATED_BUSIF WB_SLAVE";
+--ATTRIBUTE X_INTERFACE_PARAMETER of rst_i : SIGNAL is "ASSOCIATED_BUSIF WB_DB";
+
+ATTRIBUTE X_INTERFACE_INFO OF wb_cyc_i: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0 WB_SLAVE wb_dbus_cyc_o";
+ATTRIBUTE X_INTERFACE_INFO OF wb_stb_i: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0 WB_SLAVE wb_dbus_stb_o";
+ATTRIBUTE X_INTERFACE_INFO OF wb_we_i: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0  WB_SLAVE wb_dbus_we_o";
+ATTRIBUTE X_INTERFACE_INFO OF wb_ack_o: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0 WB_SLAVE wb_dbus_ack_i";
+ATTRIBUTE X_INTERFACE_INFO OF wb_adr_i: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0 WB_SLAVE wb_dbus_adr_o";
+ATTRIBUTE X_INTERFACE_INFO OF wb_dat_i: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0 WB_SLAVE wb_dbus_dat_o";
+ATTRIBUTE X_INTERFACE_INFO OF wb_dat_o: SIGNAL IS "bonfire.eu:wb:Wishbone_master:1.0 WB_SLAVE wb_dbus_dat_i";
+
+ATTRIBUTE  X_INTERFACE_INFO OF gpio_o: SIGNAL IS "xilinx.com:interface:gpio:1.0 GPIO TRI_O";
+ATTRIBUTE  X_INTERFACE_INFO OF gpio_i: SIGNAL IS "xilinx.com:interface:gpio:1.0 GPIO TRI_I";
+ATTRIBUTE  X_INTERFACE_INFO OF gpio_t: SIGNAL IS "xilinx.com:interface:gpio:1.0 GPIO TRI_T";
 
 
 subtype t_gpio_bits is std_logic_vector(NUM_GPIO_BITS-1 downto 0);
@@ -178,7 +200,7 @@ end generate;
    variable regnum : t_regnum;
 
    begin
-   
+
      wb_dat_o <= (others=> 'X');
      if wb_cyc_i = '1' and wb_stb_i='1' and wb_we_i='0' then
 
@@ -198,7 +220,7 @@ end generate;
          when tr_low_ip => wb_dat_o <= fill_bits(low_ip);
          when tr_out_xor => wb_dat_o <= fill_bits(out_xor);
 
-         when others=> 
+         when others=>
 
        end case;
 
